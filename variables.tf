@@ -103,54 +103,54 @@ variable "project_name" {
   default     = "default"
 }
 
-variable ssh_private_key {
+variable "ssh_private_key" {
   type        = string
   description = "An SSH key for a private Repo from which to sync"
   default     = ""
 }
 
-variable https_username {
+variable "https_username" {
   type        = string
   description = "An HTTPS username for a private Repo from which to sync"
   default     = ""
 }
 
 
-variable https_password {
+variable "https_password" {
   type        = string
   description = "An HTTPS password (or token) for a private Repo from which to sync"
   default     = ""
 }
 
-variable github_secret {
+variable "github_secret" {
   type        = string
   description = "A secret for GitHub Webhooks"
   default     = ""
 }
 
 
-variable gitlab_secret {
+variable "gitlab_secret" {
   type        = string
   description = "A secret for GitLab Webhooks"
   default     = ""
 }
 
 
-variable bitbucket_server_secret {
+variable "bitbucket_server_secret" {
   type        = string
   description = "A secret for BitBucket Server Webhooks"
   default     = ""
 }
 
 
-variable bitbucket_uuid {
+variable "bitbucket_uuid" {
   type        = string
   description = "A secret for Bitbucket Webhooks"
   default     = ""
 }
 
 
-variable gogs_secret {
+variable "gogs_secret" {
   type        = string
   description = "A secret for Gogs Webhooks"
   default     = ""
