@@ -190,14 +190,14 @@ locals {
   chart                             = "argo-cd"
 
   ssh_secrets_conf = <<EOT
-- url: ${var.sync_repo_url}
+- url: ${local.repoURL}
   sshPrivateKeySecret:
     name: ${local.sync_repo_credentials_secret_name}
     key: sshPrivateKey
   EOT
 
   https_secrets_conf = <<EOT
-- url: ${var.sync_repo_url}
+- url: ${local.repoURL}
   usernameSecret:
     name: ${local.sync_repo_credentials_secret_name}
     key: username
