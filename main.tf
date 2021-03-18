@@ -17,7 +17,7 @@ resource "kubernetes_secret" "sync_repo_secret" {
 
   metadata {
     name      = local.sync_repo_credentials_secret_name
-    namespace = kubernetes_namespace.this.metadata[0].name
+    namespace = kubernetes_namespace.this[count.index].metadata[0].name
     labels = {
       "app.kubernetes.io/name" : local.sync_repo_credentials_secret_name
       "app.kubernetes.io/part-of" : "argocd"
