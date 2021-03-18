@@ -1,8 +1,37 @@
+data aws_region current {}
+
+data aws_eks_cluster this {
+  name = var.cluster_name
+}
+
 resource "kubernetes_namespace" "this" {
   count = var.namespace == "" ? 1 : 0
   metadata {
     name = var.namespace_name
   }
+}
+
+resource "kubernetes_secret" "sync_repo_secret" {
+
+  depends_on = [kubernetes_namespace.this]
+
+  metadata {
+    name = local.sync_repo_credentials_secret_name
+    namespace = kubernetes_namespace.this.metadata[0].name
+    labels = {
+      "app.kubernetes.io/name": local.sync_repo_credentials_secret_name
+      "app.kubernetes.io/part-of": "argocd"
+    }
+  }
+
+
+  data = { 
+    "username" = var.https_username
+    "password" = var.https_password
+    "sshPrivateKey" = var.ssh_private_key
+  }
+
+  type = "kubernetes.io/basic-auth"
 }
 
 resource "helm_release" "this" {
@@ -27,15 +56,9 @@ resource "helm_release" "this" {
   }
 }
 
-data "aws_region" "current" {}
-
-data "aws_eks_cluster" "this" {
-  name = var.cluster_name
-}
-
 module "iam_assumable_role_admin" {
   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "~> v3.6.0"
+#  version                       = "~> v3.6.0"
   create_role                   = true
   role_name                     = "${var.cluster_name}_argocd"
   provider_url                  = replace(data.aws_eks_cluster.this.identity.0.oidc.0.issuer, "https://", "")
@@ -161,9 +184,30 @@ locals {
     { for i, domain in tolist(var.domains) : "server.ingress.tls[${i}].secretName" => "argo-cd-${domain}-tls" }
   )
   repoURL    = "${var.vcs}/${var.owner}/${var.repository}"
+  sync_repo_credentials_secret_name  = "argocd-repo-credentials-secret"
   repository = "https://argoproj.github.io/argo-helm"
   name       = "argocd"
   chart      = "argo-cd"
+
+    ssh_secrets_conf = <<EOT
+- url: ${var.sync_repo_url}
+  sshPrivateKeySecret:
+    name: ${local.sync_repo_credentials_secret_name}
+    key: sshPrivateKey
+  EOT
+
+  https_secrets_conf = <<EOT
+- url: ${var.sync_repo_url}
+  usernameSecret:
+    name: ${local.sync_repo_credentials_secret_name}
+    key: username
+  passwordSecret:
+    name: ${local.sync_repo_credentials_secret_name}
+    key: password
+  EOT
+
+  secrets_conf = var.ssh_private_key == "" ? local.https_secrets_conf : local.ssh_secrets_conf
+
   init_conf = merge(
     {
       "server.additionalApplications[0].name"                          = "swiss-army-kube"
@@ -195,6 +239,12 @@ locals {
     "dex.enabled"                        = "false"
     "server.rbacConfig.policy\\.default" = "role:readonly"
 
+    "configs.secret.createSecret" = true
+    "configs.secret.githubSecret" = var.github_secret
+    "configs.secret.gitlabSecret" = var.gitlab_secret
+    "configs.secret.bitbucketServerSecret" = var.bitbucket_server_secret
+    "configs.secret.bitbucketUUID" = var.bitbucket_uuid
+    "configs.secret.gogsSecret" = var.gogs_secret
     "configs.secret.argocdServerAdminPassword"                             = aws_ssm_parameter.encrypted.value
     "global.securityContext.fsGroup"                                       = "999"
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
@@ -207,6 +257,7 @@ locals {
     "repoServer.volumes[0].configMap.items[0].path"                        = "decryptor"
     "repoServer.volumeMounts[0].name"                                      = "decryptor"
     "repoServer.volumeMounts[0].mountPath"                                 = "/opt/decryptor/bin"
+    "server.config.repositories"                                           = local.secrets_conf
     "server.config.configManagementPlugins" = yamlencode(
       [{
         "name" = "decryptor"
