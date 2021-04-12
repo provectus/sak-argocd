@@ -257,7 +257,7 @@ locals {
     "repoServer.volumes[0].configMap.items[0].path"                        = "decryptor"
     "repoServer.volumeMounts[0].name"                                      = "decryptor"
     "repoServer.volumeMounts[0].mountPath"                                 = "/opt/decryptor/bin"
-    "server.config.repositories"                                           = local.secrets_conf
+    "server.config.repositories"                                           = merge(local.secrets_conf,var.repo_conf)
     "server.config.configManagementPlugins" = yamlencode(
       [{
         "name" = "decryptor"

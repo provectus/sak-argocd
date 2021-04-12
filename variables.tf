@@ -28,6 +28,12 @@ variable "conf" {
   default     = {}
 }
 
+variable "repo_conf" {
+  type        = map(string)
+  description = "A custom configuration for deployment"
+  default     = {}
+}
+
 variable "module_depends_on" {
   default     = []
   type        = list(any)
