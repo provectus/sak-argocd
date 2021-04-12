@@ -29,9 +29,9 @@ variable "conf" {
 }
 
 variable "repo_conf" {
-  type        = map(string)
+  type        = string
   description = "A custom configuration for deployment"
-  default     = {}
+  default     = ""
 }
 
 variable "module_depends_on" {
