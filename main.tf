@@ -204,6 +204,7 @@ locals {
   passwordSecret:
     name: ${local.sync_repo_credentials_secret_name}
     key: password
+${var.repo_conf}
   EOT
 
   secrets_conf = var.ssh_private_key == "" ? local.https_secrets_conf : local.ssh_secrets_conf
@@ -257,7 +258,7 @@ locals {
     "repoServer.volumes[0].configMap.items[0].path"                        = "decryptor"
     "repoServer.volumeMounts[0].name"                                      = "decryptor"
     "repoServer.volumeMounts[0].mountPath"                                 = "/opt/decryptor/bin"
-    "server.config.repositories"                                           = concat(local.secrets_conf,var.repo_conf)
+    "server.config.repositories"                                           = local.secrets_conf
     "server.config.configManagementPlugins" = yamlencode(
       [{
         "name" = "decryptor"
