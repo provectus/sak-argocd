@@ -251,7 +251,7 @@ ${var.repo_conf}
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
     "repoServer.env[0].value"                                              = data.aws_region.current.name
     "repoServer.serviceAccount.create"                                     = "true"
-    "repoServer.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = module.iam_assumable_role_admin.this_iam_role_arn
+    "repoServer.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = module.iam_assumable_role_admin.iam_role_arn
     "repoServer.volumes[0].name"                                           = "decryptor"
     "repoServer.volumes[0].configMap.name"                                 = "argocd-decryptor"
     "repoServer.volumes[0].configMap.items[0].key"                         = "decryptor"
