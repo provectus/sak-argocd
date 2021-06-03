@@ -127,9 +127,9 @@ resource "local_file" "this" {
 }
 
 resource "random_password" "this" {
-  length  = 20
-  special = true
-  override_special = "_%@"
+  length           = 20
+  special          = true
+  override_special = "_%@$"
 }
 
 resource "aws_ssm_parameter" "this" {
@@ -236,19 +236,24 @@ ${var.repo_conf}
       "server.additionalProjects[0].sourceRepos[0]"                    = "*"
     }
   )
+  secure = {
+    "configs.secret.argocdServerAdminPassword" = tostring(aws_ssm_parameter.encrypted.value)
+  }
+
   conf = {
     "server.extraArgs[0]"                = "--insecure"
     "installCRDs"                        = "false"
     "dex.enabled"                        = "false"
     "server.rbacConfig.policy\\.default" = "role:readonly"
 
-    "configs.secret.createSecret"                                          = true
-    "configs.secret.githubSecret"                                          = var.github_secret
-    "configs.secret.gitlabSecret"                                          = var.gitlab_secret
-    "configs.secret.bitbucketServerSecret"                                 = var.bitbucket_server_secret
-    "configs.secret.bitbucketUUID"                                         = var.bitbucket_uuid
-    "configs.secret.gogsSecret"                                            = var.gogs_secret
-    "configs.secret.argocdServerAdminPassword"                             = aws_ssm_parameter.encrypted.value
+    "kubeVersionOverride"                  = var.kubeversion
+    "configs.secret.createSecret"          = true
+    "configs.secret.githubSecret"          = var.github_secret
+    "configs.secret.gitlabSecret"          = var.gitlab_secret
+    "configs.secret.bitbucketServerSecret" = var.bitbucket_server_secret
+    "configs.secret.bitbucketUUID"         = var.bitbucket_uuid
+    "configs.secret.gogsSecret"            = var.gogs_secret
+
     "global.securityContext.fsGroup"                                       = "999"
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
     "repoServer.env[0].value"                                              = data.aws_region.current.name
@@ -345,6 +350,14 @@ EOF
       key => {
         "name"  = key
         "value" = tostring(value)
+      }
+    }),
+    values({
+      for key, value in local.secure :
+      key => {
+        "name"        = key
+        "value"       = tostring(value)
+        "forceString" = true
       }
     })
   )
