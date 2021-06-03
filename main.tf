@@ -237,7 +237,7 @@ ${var.repo_conf}
     }
   )
   secure = {
-    "configs.secret.argocdServerAdminPassword" = tostring(aws_ssm_parameter.encrypted.value)
+    "configs.secret.argocdServerAdminPassword" = base64encode(aws_ssm_parameter.encrypted.value)
   }
 
   conf = {
