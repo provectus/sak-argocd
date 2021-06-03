@@ -129,6 +129,7 @@ resource "local_file" "this" {
 resource "random_password" "this" {
   length  = 20
   special = true
+  override_special = "_%@"
 }
 
 resource "aws_ssm_parameter" "this" {
@@ -211,6 +212,7 @@ ${var.repo_conf}
 
   init_conf = merge(
     {
+      "kubeVersionOverride"                                            = var.kubeversion
       "server.additionalApplications[0].name"                          = "swiss-army-kube"
       "server.additionalApplications[0].namespace"                     = local.namespace
       "server.additionalApplications[0].project"                       = var.project_name

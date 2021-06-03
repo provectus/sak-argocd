@@ -10,10 +10,16 @@ variable "namespace_name" {
   description = "A name of namespace for creating"
 }
 
+variable "kubeversion" {
+  type        = string
+  description = "A Kubernetes API version"
+  default     = "1.18"
+}
+
 variable "chart_version" {
   type        = string
   description = "A Helm Chart version"
-  default     = "2.11.0"
+  default     = "3.6.6"
 }
 
 variable "tags" {
