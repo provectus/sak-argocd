@@ -236,6 +236,12 @@ ${var.repo_conf}
       "server.additionalProjects[0].sourceRepos[0]"                    = "*"
     }
   )
+
+  sensitive = yamlencode(
+  [{
+    "configs.secret.argocdServerAdminPassword" = aws_ssm_parameter.encrypted.value
+  }]
+  
   conf = {
     "server.extraArgs[0]"                = "--insecure"
     "installCRDs"                        = "false"
@@ -249,7 +255,6 @@ ${var.repo_conf}
     "configs.secret.bitbucketServerSecret"     = var.bitbucket_server_secret
     "configs.secret.bitbucketUUID"             = var.bitbucket_uuid
     "configs.secret.gogsSecret"                = var.gogs_secret
-    "configs.secret.argocdServerAdminPassword" = "'${aws_ssm_parameter.encrypted.value}'"
 
     "global.securityContext.fsGroup"                                       = "999"
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
@@ -369,6 +374,8 @@ EOF
         "chart"          = local.chart
         "helm" = {
           "parameters" = local.values
+          "values" = |
+            local.sensitive
         }
       }
       "syncPolicy" = {
