@@ -238,10 +238,10 @@ ${var.repo_conf}
   )
 
   sensitive = yamlencode(
-  [{
-    "configs.secret.argocdServerAdminPassword" = aws_ssm_parameter.encrypted.value
-  }]
-  
+    [{
+      "configs.secret.argocdServerAdminPassword" = aws_ssm_parameter.encrypted.value
+    }]
+  )
   conf = {
     "server.extraArgs[0]"                = "--insecure"
     "installCRDs"                        = "false"
@@ -374,8 +374,7 @@ EOF
         "chart"          = local.chart
         "helm" = {
           "parameters" = local.values
-          "values" = |
-            local.sensitive
+          "values" = local.sensitive
         }
       }
       "syncPolicy" = {
