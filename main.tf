@@ -236,23 +236,20 @@ ${var.repo_conf}
       "server.additionalProjects[0].sourceRepos[0]"                    = "*"
     }
   )
-  secure = {
-    "configs.secret.argocdServerAdminPassword" = base64encode(aws_ssm_parameter.encrypted.value)
-  }
-
   conf = {
     "server.extraArgs[0]"                = "--insecure"
     "installCRDs"                        = "false"
     "dex.enabled"                        = "false"
     "server.rbacConfig.policy\\.default" = "role:readonly"
 
-    "kubeVersionOverride"                  = var.kubeversion
-    "configs.secret.createSecret"          = true
-    "configs.secret.githubSecret"          = var.github_secret
-    "configs.secret.gitlabSecret"          = var.gitlab_secret
-    "configs.secret.bitbucketServerSecret" = var.bitbucket_server_secret
-    "configs.secret.bitbucketUUID"         = var.bitbucket_uuid
-    "configs.secret.gogsSecret"            = var.gogs_secret
+    "kubeVersionOverride"                      = var.kubeversion
+    "configs.secret.createSecret"              = true
+    "configs.secret.githubSecret"              = var.github_secret
+    "configs.secret.gitlabSecret"              = var.gitlab_secret
+    "configs.secret.bitbucketServerSecret"     = var.bitbucket_server_secret
+    "configs.secret.bitbucketUUID"             = var.bitbucket_uuid
+    "configs.secret.gogsSecret"                = var.gogs_secret
+    "configs.secret.argocdServerAdminPassword" = "'${aws_ssm_parameter.encrypted.value}'"
 
     "global.securityContext.fsGroup"                                       = "999"
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
@@ -350,14 +347,6 @@ EOF
       key => {
         "name"  = key
         "value" = tostring(value)
-      }
-    }),
-    values({
-      for key, value in local.secure :
-      key => {
-        "name"        = key
-        "value"       = tostring(value)
-        "forceString" = true
       }
     })
   )
