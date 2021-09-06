@@ -184,7 +184,7 @@ locals {
     { for i, domain in tolist(var.domains) : "server.ingress.hosts[${i}]" => "argo-cd.${domain}" },
     { for i, domain in tolist(var.domains) : "server.ingress.tls[${i}].secretName" => "argo-cd-${domain}-tls" }
   )
-  repoURL                           = "${var.vcs}/${var.owner}/${var.repository}"
+  repoURL                           = "${var.vcs}${var.owner}/${var.repository}"
   sync_repo_credentials_secret_name = "argocd-repo-credentials-secret"
   repository                        = "https://argoproj.github.io/argo-helm"
   name                              = "argocd"
