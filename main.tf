@@ -63,7 +63,7 @@ module "iam_assumable_role_admin" {
   role_name                     = "${var.cluster_name}_argocd"
   provider_url                  = replace(data.aws_eks_cluster.this.identity.0.oidc.0.issuer, "https://", "")
   role_policy_arns              = [aws_iam_policy.this.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:${local.namespace}:argocd"]
+  oidc_fully_qualified_subjects = ["system:serviceaccount:${local.namespace}:argocd-repo-server"]
   tags                          = var.tags
 }
 
@@ -264,6 +264,7 @@ ${var.repo_conf}
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
     "repoServer.env[0].value"                                              = data.aws_region.current.name
     "repoServer.serviceAccount.create"                                     = "true"
+    "repoServer.serviceAccount.name"                                       = "argocd-repo-server"
     "repoServer.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = module.iam_assumable_role_admin.iam_role_arn
     "repoServer.volumes[0].name"                                           = "decryptor"
     "repoServer.volumes[0].configMap.name"                                 = "argocd-decryptor"
