@@ -57,8 +57,8 @@ resource "helm_release" "this" {
 }
 
 module "iam_assumable_role_admin" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  #  version                       = "~> v3.6.0"
+  source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
+  version                       = "4.6.0"
   create_role                   = true
   role_name                     = "${var.cluster_name}_argocd"
   provider_url                  = replace(data.aws_eks_cluster.this.identity.0.oidc.0.issuer, "https://", "")
@@ -184,21 +184,21 @@ locals {
     { for i, domain in tolist(var.domains) : "server.ingress.hosts[${i}]" => "argo-cd.${domain}" },
     { for i, domain in tolist(var.domains) : "server.ingress.tls[${i}].secretName" => "argo-cd-${domain}-tls" }
   )
-  repoURL                           = "${var.vcs}/${var.owner}/${var.repository}"
+  repo_url                          = "${var.vcs}/${var.owner}/${var.repository}"
   sync_repo_credentials_secret_name = "argocd-repo-credentials-secret"
   repository                        = "https://argoproj.github.io/argo-helm"
   name                              = "argocd"
   chart                             = "argo-cd"
 
   ssh_secrets_conf = <<EOT
-- url: ${local.repoURL}
+- url: ${local.repo_url}
   sshPrivateKeySecret:
     name: ${local.sync_repo_credentials_secret_name}
     key: sshPrivateKey
   EOT
 
   https_secrets_conf = <<EOT
-- url: ${local.repoURL}
+- url: ${local.repo_url}
   usernameSecret:
     name: ${local.sync_repo_credentials_secret_name}
     key: username
@@ -216,7 +216,7 @@ ${var.repo_conf}
       "server.additionalApplications[0].name"                          = "swiss-army-kube"
       "server.additionalApplications[0].namespace"                     = local.namespace
       "server.additionalApplications[0].project"                       = var.project_name
-      "server.additionalApplications[0].source.repoURL"                = local.repoURL
+      "server.additionalApplications[0].source.repo_url"               = local.repo_url
       "server.additionalApplications[0].source.targetRevision"         = var.branch
       "server.additionalApplications[0].source.path"                   = "${var.path_prefix}${var.apps_dir}"
       "server.additionalApplications[0].source.plugin.name"            = "decryptor"
@@ -252,13 +252,13 @@ ${var.repo_conf}
     "dex.enabled"                        = "false"
     "server.rbacConfig.policy\\.default" = "role:readonly"
 
-    "kubeVersionOverride"                      = var.kubeversion
-    "configs.secret.createSecret"              = true
-    "configs.secret.githubSecret"              = var.github_secret
-    "configs.secret.gitlabSecret"              = var.gitlab_secret
-    "configs.secret.bitbucketServerSecret"     = var.bitbucket_server_secret
-    "configs.secret.bitbucketUUID"             = var.bitbucket_uuid
-    "configs.secret.gogsSecret"                = var.gogs_secret
+    "kubeVersionOverride"                  = var.kubeversion
+    "configs.secret.createSecret"          = true
+    "configs.secret.githubSecret"          = var.github_secret
+    "configs.secret.gitlabSecret"          = var.gitlab_secret
+    "configs.secret.bitbucketServerSecret" = var.bitbucket_server_secret
+    "configs.secret.bitbucketUUID"         = var.bitbucket_uuid
+    "configs.secret.gogsSecret"            = var.gogs_secret
 
     "global.securityContext.fsGroup"                                       = "999"
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
@@ -374,12 +374,12 @@ EOF
       }
       "project" = var.project_name
       "source" = {
-        "repoURL"        = local.repository
+        "repo_url"       = local.repository
         "targetRevision" = var.chart_version
         "chart"          = local.chart
         "helm" = {
           "parameters" = local.values
-          "values" = local.sensitive
+          "values"     = local.sensitive
         }
       }
       "syncPolicy" = {
