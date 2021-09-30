@@ -6,7 +6,7 @@ Module install ArgoCD application to Kubernetes cluster and optionally configure
 
 ## Example
 Simple use-case without ingresses and authentication, for accessing ArgoCD UI need to configure port-forwarding.
-``` hcl 
+``` hcl
 module argocd {
   source        = "git::https://github.com/provectus/sak-argocd.git"
 
@@ -18,15 +18,21 @@ module argocd {
 }
 ```
 
+## Requirements
+
+```
+terraform >= 0.15
+ ```
+
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | n/a |
-| helm | n/a |
-| kubernetes | n/a |
-| local | n/a |
-| random | n/a |
+| aws | >= 3.0 |
+| helm | >= 1.0 |
+| kubernetes | >= 1.11 |
+| local | >=2.1.0 |
+| random | >= 3.1.0 |
 
 ## Inputs
 

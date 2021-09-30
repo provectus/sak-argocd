@@ -40,12 +40,6 @@ variable "repo_conf" {
   default     = ""
 }
 
-variable "module_depends_on" {
-  default     = []
-  type        = list(any)
-  description = "A list of explicit dependencies"
-}
-
 variable "branch" {
   type        = string
   default     = ""
