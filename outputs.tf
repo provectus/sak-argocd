@@ -1,7 +1,7 @@
 output "state" {
   description = "A set of values that required for other modules in case of enabling ArgoCD"
   value = local.enabled ? {
-    repository = local.repoURL
+    repository = local.repo_url
     branch     = var.branch
     namespace  = local.namespace
     path       = var.apps_dir
