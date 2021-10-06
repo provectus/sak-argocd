@@ -216,7 +216,7 @@ ${var.repo_conf}
       "server.additionalApplications[0].name"                          = "swiss-army-kube"
       "server.additionalApplications[0].namespace"                     = local.namespace
       "server.additionalApplications[0].project"                       = var.project_name
-      "server.additionalApplications[0].source.repoUrl"               = local.repo_url
+      "server.additionalApplications[0].source.repoURL"               = local.repo_url
       "server.additionalApplications[0].source.targetRevision"         = var.branch
       "server.additionalApplications[0].source.path"                   = "${var.path_prefix}${var.apps_dir}"
       "server.additionalApplications[0].source.plugin.name"            = "decryptor"
@@ -374,7 +374,7 @@ EOF
       }
       "project" = var.project_name
       "source" = {
-        "repoUrl"       = local.repository
+        "repoURL"       = local.repository
         "targetRevision" = var.chart_version
         "chart"          = local.chart
         "helm" = {
