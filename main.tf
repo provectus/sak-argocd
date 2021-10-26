@@ -259,6 +259,7 @@ ${var.repo_conf}
     "configs.secret.bitbucketServerSecret" = var.bitbucket_server_secret
     "configs.secret.bitbucketUUID"         = var.bitbucket_uuid
     "configs.secret.gogsSecret"            = var.gogs_secret
+    "configs.knownHosts.data.ssh_known_hosts"                              = var.known_hosts
 
     "global.securityContext.fsGroup"                                       = "999"
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"

@@ -115,6 +115,12 @@ variable "ssh_private_key" {
   default     = ""
 }
 
+variable "known_hosts" {
+  type        = string
+  description = "It will be used to construct a known_hosts file"
+  default     = ""
+}
+
 variable "https_username" {
   type        = string
   description = "An HTTPS username for a private Repo from which to sync"
