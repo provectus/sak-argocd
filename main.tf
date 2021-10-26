@@ -252,14 +252,14 @@ ${var.repo_conf}
     "dex.enabled"                        = "false"
     "server.rbacConfig.policy\\.default" = "role:readonly"
 
-    "kubeVersionOverride"                  = var.kubeversion
-    "configs.secret.createSecret"          = true
-    "configs.secret.githubSecret"          = var.github_secret
-    "configs.secret.gitlabSecret"          = var.gitlab_secret
-    "configs.secret.bitbucketServerSecret" = var.bitbucket_server_secret
-    "configs.secret.bitbucketUUID"         = var.bitbucket_uuid
-    "configs.secret.gogsSecret"            = var.gogs_secret
-    "configs.knownHosts.data.ssh_known_hosts"                              = var.known_hosts
+    "kubeVersionOverride"                     = var.kubeversion
+    "configs.secret.createSecret"             = true
+    "configs.secret.githubSecret"             = var.github_secret
+    "configs.secret.gitlabSecret"             = var.gitlab_secret
+    "configs.secret.bitbucketServerSecret"    = var.bitbucket_server_secret
+    "configs.secret.bitbucketUUID"            = var.bitbucket_uuid
+    "configs.secret.gogsSecret"               = var.gogs_secret
+    "configs.knownHosts.data.ssh_known_hosts" = var.known_hosts
 
     "global.securityContext.fsGroup"                                       = "999"
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
@@ -375,7 +375,7 @@ EOF
       }
       "project" = var.project_name
       "source" = {
-        "repo_url"       = local.repository
+        "repoUrl"        = local.repository
         "targetRevision" = var.chart_version
         "chart"          = local.chart
         "helm" = {
