@@ -248,6 +248,7 @@ ${var.repo_conf}
   )
   conf = {
     "server.extraArgs[0]"                = "--insecure"
+    "server.extraArgs[1]"                = "--insecure-ignore-host-key"
     "installCRDs"                        = "false"
     "dex.enabled"                        = "false"
     "server.rbacConfig.policy\\.default" = "role:readonly"
