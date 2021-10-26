@@ -375,7 +375,7 @@ EOF
       }
       "project" = var.project_name
       "source" = {
-        "repoUrl"        = local.repository
+        "repoURL"        = local.repository
         "targetRevision" = var.chart_version
         "chart"          = local.chart
         "helm" = {
