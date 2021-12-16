@@ -271,8 +271,25 @@ ${var.repo_conf}
     "repoServer.volumes[0].configMap.name"                                 = "argocd-decryptor"
     "repoServer.volumes[0].configMap.items[0].key"                         = "decryptor"
     "repoServer.volumes[0].configMap.items[0].path"                        = "decryptor"
+    "repoServer.volumes[1].name"                                           = "kustomize_3_2_0"
+    "repoServer.volumes[1].emptyDir" = yamlencode({})
     "repoServer.volumeMounts[0].name"                                      = "decryptor"
     "repoServer.volumeMounts[0].mountPath"                                 = "/opt/decryptor/bin"
+    "repoServer.volumeMounts[1].name"                                      = "kustomize_3_2_0"
+    "repoServer.volumeMounts[1].mountPath"                                 = "/usr/local/bin/kustomize"
+    "repoServer.volumeMounts[1].subPath"                                   = "kustomize"
+    "repoServer.initContainers" = yamlencode(
+      [{
+        "name" = "download-kustomize"
+        "image" = "alpine:3.15"
+        "command" = ["sh", "-c"]
+        "args" = ["wget -O kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.2.0/kustomize_3.2.0_linux_amd64 && chmod +x kustomize && mv kustomize /kustomize_3_2_0/"]
+        "volumeMounts" = [{
+          "mountPath" = "/kustomize_3_2_0"
+          "name" = "kustomize_3_2_0"
+        }]
+      }]
+    )
     "server.config.repositories"                                           = local.secrets_conf
     "server.config.configManagementPlugins" = yamlencode(
       [{
