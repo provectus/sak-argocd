@@ -271,25 +271,19 @@ ${var.repo_conf}
     "repoServer.volumes[0].configMap.name"                                 = "argocd-decryptor"
     "repoServer.volumes[0].configMap.items[0].key"                         = "decryptor"
     "repoServer.volumes[0].configMap.items[0].path"                        = "decryptor"
-    "repoServer.volumes[1].name"                                           = "kustomize_3_2_0"
-    "repoServer.volumes[1].emptyDir" = yamlencode({})
+    "repoServer.volumes[1].name"                                           = "kustomize-3-2-0"
     "repoServer.volumeMounts[0].name"                                      = "decryptor"
     "repoServer.volumeMounts[0].mountPath"                                 = "/opt/decryptor/bin"
-    "repoServer.volumeMounts[1].name"                                      = "kustomize_3_2_0"
+    "repoServer.volumeMounts[1].name"                                      = "kustomize-3-2-0"
     "repoServer.volumeMounts[1].mountPath"                                 = "/usr/local/bin/kustomize"
     "repoServer.volumeMounts[1].subPath"                                   = "kustomize"
-    "repoServer.initContainers" = yamlencode(
-      [{
-        "name" = "download-kustomize"
-        "image" = "alpine:3.15"
-        "command" = ["sh", "-c"]
-        "args" = ["wget -O kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.2.0/kustomize_3.2.0_linux_amd64 && chmod +x kustomize && mv kustomize /kustomize_3_2_0/"]
-        "volumeMounts" = [{
-          "mountPath" = "/kustomize_3_2_0"
-          "name" = "kustomize_3_2_0"
-        }]
-      }]
-    )
+    "repoServer.initContainers[0].name"                                    = "download-kustomize"
+    "repoServer.initContainers[0].image"                                   = "alpine:3.15"
+    "repoServer.initContainers[0].command[0]"                              = "sh"
+    "repoServer.initContainers[0].command[1]"                              = "-c"
+    "repoServer.initContainers[0].args[0]"                                 = "wget -O kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.2.0/kustomize_3.2.0_linux_amd64 && chmod +x kustomize && mv kustomize /kustomize-3-2-0/"
+    "repoServer.initContainers[0].volumeMounts[0].mountPath"               = "/kustomize-3-2-0"
+    "repoServer.initContainers[0].volumeMounts[0].name"                    = "kustomize-3-2-0"
     "server.config.repositories"                                           = local.secrets_conf
     "server.config.configManagementPlugins" = yamlencode(
       [{
