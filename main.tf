@@ -284,6 +284,7 @@ ${var.repo_conf}
     "repoServer.initContainers[0].args[0]"                                 = "wget -O kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.2.0/kustomize_3.2.0_linux_amd64 && chmod +x kustomize && mv kustomize /kustomize-3-2-0/"
     "repoServer.initContainers[0].volumeMounts[0].mountPath"               = "/kustomize-3-2-0"
     "repoServer.initContainers[0].volumeMounts[0].name"                    = "kustomize-3-2-0"
+    "server.config.kustomize\\.path\\.v3\\.2\\.0"                          = "/usr/local/bin/kustomize_3.2.0/kustomize"
     "server.config.repositories"                                           = local.secrets_conf
     "server.config.configManagementPlugins" = yamlencode(
       [{
