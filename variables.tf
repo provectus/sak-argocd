@@ -34,6 +34,12 @@ variable "conf" {
   default     = {}
 }
 
+variable "sensitive_conf" {
+  type        = any
+  description = "A custom configuration with sensitive data for deployment"
+  default     = {}
+}
+
 variable "repo_conf" {
   type        = string
   description = "A custom configuration for deployment"

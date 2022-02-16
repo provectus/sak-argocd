@@ -238,13 +238,13 @@ ${var.repo_conf}
   )
 
   sensitive = yamlencode(
-    {
+    merge({
       "configs" = {
         "secret" = {
           "argocdServerAdminPassword" = aws_ssm_parameter.encrypted.value
         }
       }
-    }
+    }, var.sensitive_conf)
   )
   conf = {
     "server.extraArgs[0]"                = "--insecure"
