@@ -173,3 +173,15 @@ variable "gogs_secret" {
   description = "A secret for Gogs Webhooks"
   default     = ""
 }
+
+variable "store_passwords_in_ssm" {
+  type        = bool
+  description = "A flag to enable keeping encrypted and raw passwords in AWS SSM, create a few AWS resources (default: true)"
+  default     = true
+}
+
+variable "enable_decryptor_plugin" {
+  type        = bool
+  description = "A flag to enable decryptor script, create a few AWS resources (default: true)"
+  default     = true
+}
