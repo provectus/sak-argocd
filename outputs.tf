@@ -6,7 +6,7 @@ output "state" {
     namespace  = local.namespace
     path       = var.apps_dir
     full_path  = "${var.path_prefix}${var.apps_dir}"
-    kms_key_id = aws_kms_key.this.key_id
+    kms_key_id = coalesce(one(aws_kms_key.this[*].key_id), "null")
     project    = "default"
   } : {}
 }

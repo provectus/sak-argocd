@@ -1,7 +1,10 @@
-data "aws_region" "current" {}
+data "aws_region" "current" {
+  count = var.enable_decryptor_plugin || var.store_passwords_in_ssm ? 1 : 0
+}
 
 data "aws_eks_cluster" "this" {
-  name = var.cluster_name
+  count = var.enable_decryptor_plugin || var.store_passwords_in_ssm ? 1 : 0
+  name  = var.cluster_name
 }
 
 resource "kubernetes_namespace" "this" {
@@ -57,23 +60,26 @@ resource "helm_release" "this" {
 }
 
 module "iam_assumable_role_admin" {
+  count                         = var.enable_decryptor_plugin ? 1 : 0
   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
   version                       = "4.6.0"
-  create_role                   = true
+  create_role                   = var.enable_decryptor_plugin
   role_name                     = "${var.cluster_name}_argocd"
-  provider_url                  = replace(data.aws_eks_cluster.this.identity.0.oidc.0.issuer, "https://", "")
-  role_policy_arns              = [aws_iam_policy.this.arn]
+  provider_url                  = replace(data.aws_eks_cluster.this[0].identity.0.oidc.0.issuer, "https://", "")
+  role_policy_arns              = [aws_iam_policy.this[0].arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:${local.namespace}:argocd-repo-server"]
   tags                          = var.tags
 }
 
 resource "aws_iam_policy" "this" {
+  count       = var.enable_decryptor_plugin ? 1 : 0
   name_prefix = "argocd"
-  description = "EKS ArgoCD policy for cluster ${data.aws_eks_cluster.this.id}"
-  policy      = data.aws_iam_policy_document.this.json
+  description = "EKS ArgoCD policy for cluster ${data.aws_eks_cluster.this[0].id}"
+  policy      = data.aws_iam_policy_document.this[0].json
 }
 
 data "aws_iam_policy_document" "this" {
+  count = var.enable_decryptor_plugin ? 1 : 0
   statement {
     sid    = "ArgoCDOwn"
     effect = "Allow"
@@ -82,11 +88,12 @@ data "aws_iam_policy_document" "this" {
       "kms:Decrypt"
     ]
 
-    resources = [aws_kms_key.this.arn]
+    resources = [aws_kms_key.this[0].arn]
   }
 }
 
 resource "kubernetes_config_map" "decryptor" {
+  count = var.enable_decryptor_plugin ? 1 : 0
   metadata {
     name      = "argocd-decryptor"
     namespace = local.namespace
@@ -103,7 +110,7 @@ def decrypt(string):
   import boto3
   import base64
   client = boto3.client('kms')
-  meta = client.decrypt(CiphertextBlob=bytes(base64.b64decode("%s==" % string)),KeyId="${aws_kms_key.this.arn}")
+  meta = client.decrypt(CiphertextBlob=bytes(base64.b64decode("%s==" % string)),KeyId="${aws_kms_key.this[0].arn}")
   plaintext = meta[u'Plaintext']
   return plaintext.decode()
 
@@ -133,9 +140,10 @@ resource "random_password" "this" {
 }
 
 resource "aws_ssm_parameter" "this" {
+  count       = var.store_passwords_in_ssm ? 1 : 0
   name        = "/${var.cluster_name}/argocd/password"
   type        = "SecureString"
-  value       = random_password.this.result
+  value       = local.argocd_password
   description = "A password for accessing ArgoCD installation in ${var.cluster_name} EKS cluster"
 
   lifecycle {
@@ -146,9 +154,10 @@ resource "aws_ssm_parameter" "this" {
 }
 
 resource "aws_ssm_parameter" "encrypted" {
+  count       = var.store_passwords_in_ssm ? 1 : 0
   name        = "/${var.cluster_name}/argocd/password/encrypted"
   type        = "SecureString"
-  value       = bcrypt(random_password.this.result, 10)
+  value       = bcrypt(local.argocd_password, 10)
   description = "An encrypted password for accessing ArgoCD installation in ${var.cluster_name} EKS cluster"
 
   lifecycle {
@@ -159,6 +168,7 @@ resource "aws_ssm_parameter" "encrypted" {
 }
 
 resource "aws_kms_key" "this" {
+  count       = var.enable_decryptor_plugin ? 1 : 0
   description = "ArgoCD key"
   is_enabled  = true
 
@@ -166,14 +176,15 @@ resource "aws_kms_key" "this" {
 }
 
 resource "aws_kms_ciphertext" "client_secret" {
-  count     = lookup(var.oidc, "secret", null) == null ? 0 : 1
-  key_id    = aws_kms_key.this.key_id
+  count     = lookup(var.oidc, "secret", null) == null ? 0 : var.enable_decryptor_plugin ? 1 : 0
+  key_id    = aws_kms_key.this[0].key_id
   plaintext = lookup(var.oidc, "secret", null)
 }
 
 locals {
-  enabled   = var.branch != "" && var.owner != "" && var.repository != ""
-  namespace = coalescelist(kubernetes_namespace.this, [{ "metadata" = [{ "name" = var.namespace }] }])[0].metadata[0].name
+  argocd_password = coalesce(var.argocd_password, random_password.this.result)
+  enabled         = var.branch != "" && var.owner != "" && var.repository != ""
+  namespace       = coalescelist(kubernetes_namespace.this, [{ "metadata" = [{ "name" = var.namespace }] }])[0].metadata[0].name
   # TODO: cleanup
   legacy_defaults = merge({
     "installCRDs"            = false
@@ -219,12 +230,12 @@ ${var.repo_conf}
       "server.additionalApplications[0].source.repoURL"                = local.repo_url
       "server.additionalApplications[0].source.targetRevision"         = var.branch
       "server.additionalApplications[0].source.path"                   = "${var.path_prefix}${var.apps_dir}"
-      "server.additionalApplications[0].source.plugin.name"            = "decryptor"
       "server.additionalApplications[0].destination.server"            = "https://kubernetes.default.svc"
       "server.additionalApplications[0].destination.namespace"         = local.namespace
       "server.additionalApplications[0].syncPolicy.automated.prune"    = "true"
       "server.additionalApplications[0].syncPolicy.automated.selfHeal" = "true"
     },
+    var.enable_decryptor_plugin ? { "server.additionalApplications[0].source.plugin.name" = "decryptor" } : {},
     var.project_name == "default" ? {} : {
       "server.additionalProjects[0].name"                              = var.project_name
       "server.additionalProjects[0].namespace"                         = local.namespace
@@ -241,68 +252,72 @@ ${var.repo_conf}
     merge({
       "configs" = {
         "secret" = {
-          "argocdServerAdminPassword" = aws_ssm_parameter.encrypted.value
+          "argocdServerAdminPassword"      = var.store_passwords_in_ssm ? aws_ssm_parameter.encrypted[0].value : bcrypt(local.argocd_password, 10)
+          "argocdServerAdminPasswordMtime" = "2020-09-01T10:11:12Z"
         }
       }
     }, var.sensitive_conf)
   )
-  conf = {
-    "server.extraArgs[0]"                = "--insecure"
-    "installCRDs"                        = "false"
-    "dex.enabled"                        = "false"
-    "server.rbacConfig.policy\\.default" = "role:readonly"
-
-    "kubeVersionOverride"                     = var.kubeversion
-    "configs.secret.createSecret"             = true
-    "configs.secret.githubSecret"             = var.github_secret
-    "configs.secret.gitlabSecret"             = var.gitlab_secret
-    "configs.secret.bitbucketServerSecret"    = var.bitbucket_server_secret
-    "configs.secret.bitbucketUUID"            = var.bitbucket_uuid
-    "configs.secret.gogsSecret"               = var.gogs_secret
-    "configs.knownHosts.data.ssh_known_hosts" = var.known_hosts
-
-    "global.securityContext.fsGroup"                                       = "999"
-    "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
-    "repoServer.env[0].value"                                              = data.aws_region.current.name
-    "repoServer.serviceAccount.create"                                     = "true"
-    "repoServer.serviceAccount.name"                                       = "argocd-repo-server"
-    "repoServer.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = module.iam_assumable_role_admin.iam_role_arn
-    "repoServer.volumes[0].name"                                           = "decryptor"
-    "repoServer.volumes[0].configMap.name"                                 = "argocd-decryptor"
-    "repoServer.volumes[0].configMap.items[0].key"                         = "decryptor"
-    "repoServer.volumes[0].configMap.items[0].path"                        = "decryptor"
-    "repoServer.volumes[1].name"                                           = "custom-binaries"
-    "repoServer.volumeMounts[0].name"                                      = "decryptor"
-    "repoServer.volumeMounts[0].mountPath"                                 = "/opt/decryptor/bin"
-    "repoServer.volumeMounts[1].name"                                      = "custom-binaries"
-    "repoServer.volumeMounts[1].mountPath"                                 = "/custom-binaries"
-    "repoServer.volumeMounts[1].subPath"                                   = "kustomize"
-    "repoServer.initContainers[0].name"                                    = "download-kustomize"
-    "repoServer.initContainers[0].image"                                   = "alpine:3.15"
-    "repoServer.initContainers[0].command[0]"                              = "sh"
-    "repoServer.initContainers[0].command[1]"                              = "-c"
-    "repoServer.initContainers[0].args[0]"                                 = "wget -O kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.2.0/kustomize_3.2.0_linux_amd64 && chmod +x kustomize && mv kustomize /custom-binaries"
-    "repoServer.initContainers[0].volumeMounts[0].mountPath"               = "/custom-binaries"
-    "repoServer.initContainers[0].volumeMounts[0].name"                    = "custom-binaries"
-    "server.config.kustomize\\.path\\.v3\\.2\\.0"                          = "/custom-binaries"
-    "server.config.repositories"                                           = local.secrets_conf
-    "server.config.configManagementPlugins" = yamlencode(
-      [{
-        "name" = "decryptor"
-        "init" = {
-          "command" = ["/usr/bin/pip3"]
-          "args"    = ["install", "boto3"]
-        }
-        "generate" = {
-          "command" = ["/usr/bin/python3"]
-          "args"    = ["/opt/decryptor/bin/decryptor"]
-        }
-      }]
-    )
-
-    "server.service.type"    = "NodePort"
-    "server.ingress.enabled" = length(var.domains) > 0 ? "true" : "false"
-  }
+  conf = merge(
+    var.enable_decryptor_plugin ? {
+      "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
+      "repoServer.env[0].value"                                              = data.aws_region.current[0].name
+      "repoServer.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = module.iam_assumable_role_admin[0].iam_role_arn
+      "repoServer.volumes[1].name"                                           = "decryptor"
+      "repoServer.volumes[1].configMap.name"                                 = "argocd-decryptor"
+      "repoServer.volumes[1].configMap.items[0].key"                         = "decryptor"
+      "repoServer.volumes[1].configMap.items[0].path"                        = "decryptor"
+      "repoServer.volumeMounts[1].name"                                      = "decryptor"
+      "repoServer.volumeMounts[1].mountPath"                                 = "/opt/decryptor/bin"
+      "server.config.configManagementPlugins" = yamlencode(
+        [{
+          "name" = "decryptor"
+          "init" = {
+            "command" = ["/usr/bin/pip3"]
+            "args"    = ["install", "boto3"]
+          }
+          "generate" = {
+            "command" = ["/usr/bin/python3"]
+            "args"    = ["/opt/decryptor/bin/decryptor"]
+          }
+        }]
+      )
+    } : {},
+    contains(var.custom_tools, "kustomize_v3.2.0") ? {
+      "repoServer.volumes[0].name"                             = "custom-binaries"
+      "repoServer.volumeMounts[0].name"                        = "custom-binaries"
+      "repoServer.volumeMounts[0].mountPath"                   = "/custom-binaries"
+      "repoServer.volumeMounts[0].subPath"                     = "kustomize"
+      "repoServer.initContainers[0].name"                      = "download-kustomize"
+      "repoServer.initContainers[0].image"                     = "alpine:3.15"
+      "repoServer.initContainers[0].command[0]"                = "sh"
+      "repoServer.initContainers[0].command[1]"                = "-c"
+      "repoServer.initContainers[0].args[0]"                   = "wget -O kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.2.0/kustomize_3.2.0_linux_amd64 && chmod +x kustomize && mv kustomize /custom-binaries"
+      "repoServer.initContainers[0].volumeMounts[0].mountPath" = "/custom-binaries"
+      "repoServer.initContainers[0].volumeMounts[0].name"      = "custom-binaries"
+      "server.config.kustomize\\.path\\.v3\\.2\\.0"            = "/custom-binaries"
+    } : {},
+    {
+      "server.extraArgs[0]"                     = "--insecure"
+      "installCRDs"                             = "false"
+      "dex.enabled"                             = "false"
+      "server.rbacConfig.policy\\.default"      = "role:readonly"
+      "kubeVersionOverride"                     = var.kubeversion
+      "configs.secret.createSecret"             = true
+      "configs.secret.githubSecret"             = var.github_secret
+      "configs.secret.gitlabSecret"             = var.gitlab_secret
+      "configs.secret.bitbucketServerSecret"    = var.bitbucket_server_secret
+      "configs.secret.bitbucketUUID"            = var.bitbucket_uuid
+      "configs.secret.gogsSecret"               = var.gogs_secret
+      "configs.knownHosts.data.ssh_known_hosts" = var.known_hosts
+      "global.securityContext.fsGroup"          = "999"
+      "repoServer.serviceAccount.create"        = "true"
+      "repoServer.serviceAccount.name"          = "argocd-repo-server"
+      "server.config.repositories"              = local.secrets_conf
+      "server.service.type"                     = "NodePort"
+      "server.ingress.enabled"                  = length(var.domains) > 0 ? "true" : "false"
+    }
+  )
   values = concat(coalescelist(
     [
       {
@@ -324,7 +339,7 @@ EOF
         "value" = yamlencode(
           {
             "name"            = "Cognito"
-            "issuer"          = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${lookup(var.oidc, "pool", "")}"
+            "issuer"          = "https://cognito-idp.${data.aws_region.current[0].name}.amazonaws.com/${lookup(var.oidc, "pool", "")}"
             "clientID"        = lookup(var.oidc, "id", "")
             "clientSecret"    = "KMS_ENC:${aws_kms_ciphertext.client_secret[0].ciphertext_blob}:"
             "requestedScopes" = ["openid", "profile", "email"]
