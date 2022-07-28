@@ -58,7 +58,7 @@ resource "helm_release" "this" {
 
 module "iam_assumable_role_admin" {
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  #  version                       = "~> v3.6.0"
+  version                       = "~> v4.24.1"
   create_role                   = true
   role_name                     = "${var.cluster_name}_argocd"
   provider_url                  = replace(data.aws_eks_cluster.this.identity.0.oidc.0.issuer, "https://", "")
