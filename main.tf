@@ -279,7 +279,6 @@ ${var.repo_conf}
 - url: ${local.repoURL}
   username: ${var.https_username}
   password: ${var.https_password}
-${var.repo_conf}
   EOT
     "server.config.configManagementPlugins" = yamlencode(
       [{
