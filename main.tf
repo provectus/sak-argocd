@@ -274,12 +274,8 @@ ${var.repo_conf}
     "repoServer.volumes[0].configMap.items[0].path"                        = "decryptor"
     "repoServer.volumeMounts[0].name"                                      = "decryptor"
     "repoServer.volumeMounts[0].mountPath"                                 = "/opt/decryptor/bin"
-    #"server.config.repositories"                                           = local.secrets_conf
-    "configs.repositoryCredentials"                                        = <<EOT
-- url: ${local.repoURL}
-  username: ${var.https_username}
-  password: ${var.https_password}
-  EOT
+    "server.config.repositories"                                           = local.secrets_conf
+
     "server.config.configManagementPlugins" = yamlencode(
       [{
         "name" = "decryptor"
