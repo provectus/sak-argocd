@@ -225,7 +225,7 @@ ${var.repo_conf}
       "server.additionalApplications[0].destination.server"            = "https://kubernetes.default.svc"
       "server.additionalApplications[0].destination.namespace"         = local.namespace
       "server.additionalApplications[0].syncPolicy.automated.prune"    = "true"
-      "server.additionalApplications[0].syncPolicy.automated.selfHeal" = "true"
+      "server.additionalApplications[0].syncPolicy.automated.selfHeal" = "false"
     },
     var.project_name == "default" ? {} : {
       "server.additionalProjects[0].name"                              = var.project_name
