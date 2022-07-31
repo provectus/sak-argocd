@@ -39,7 +39,7 @@ resource "kubernetes_secret" "sync_repo_secret" {
 resource "helm_release" "this" {
   name          = local.name
   repository    = local.repository
-  chart         = var.cluster_name
+  chart         = local.chart
   version       = "3.6.6"
   namespace     = local.namespace
   recreate_pods = true
