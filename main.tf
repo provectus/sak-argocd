@@ -64,8 +64,8 @@ module "iam_assumable_role_admin" {
   version                       = "4.6.0"
   create_role                   = var.enable_decryptor_plugin
   role_name                     = "${var.cluster_name}_argocd"
-  provider_url                  = replace(data.aws_eks_cluster.this[1].identity.0.oidc.0.issuer, "https://", "")
-  role_policy_arns              = [aws_iam_policy.this[1].arn]
+  provider_url                  = replace(data.aws_eks_cluster.this[0].identity.0.oidc.0.issuer, "https://", "")
+  role_policy_arns              = [aws_iam_policy.this[0].arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:${local.namespace}:argocd-repo-server"]
   tags                          = var.tags
 }
@@ -73,8 +73,8 @@ module "iam_assumable_role_admin" {
 resource "aws_iam_policy" "this" {
   count       = var.enable_decryptor_plugin ? 1 : 0
   name_prefix = "argocd"
-  description = "EKS ArgoCD policy for cluster ${data.aws_eks_cluster.this.id}"
-  policy      = data.aws_iam_policy_document.this[1].json
+  description = "EKS ArgoCD policy for cluster ${data.aws_eks_cluster.this[0].id}"
+  policy      = data.aws_iam_policy_document.this[0].json
 }
 
 data "aws_iam_policy_document" "this" {
@@ -87,7 +87,7 @@ data "aws_iam_policy_document" "this" {
       "kms:Decrypt"
     ]
 
-    resources = [aws_kms_key.this[1].arn]
+    resources = [aws_kms_key.this[0].arn]
   }
 }
 
@@ -109,7 +109,7 @@ def decrypt(string):
   import boto3
   import base64
   client = boto3.client('kms')
-  meta = client.decrypt(CiphertextBlob=bytes(base64.b64decode("%s==" % string)),KeyId="${aws_kms_key.this.arn}")
+  meta = client.decrypt(CiphertextBlob=bytes(base64.b64decode("%s==" % string)),KeyId="${aws_kms_key.this[0].arn}")
   plaintext = meta[u'Plaintext']
   return plaintext.decode()
 
@@ -176,7 +176,7 @@ resource "aws_kms_key" "this" {
 
 resource "aws_kms_ciphertext" "client_secret" {
   count     = lookup(var.oidc, "secret", null) == null ? 0 : var.enable_decryptor_plugin ? 1 : 0
-  key_id    = aws_kms_key.this.key_id
+  key_id    = aws_kms_key.this[0].key_id
   plaintext = lookup(var.oidc, "secret", null)
 }
 
@@ -250,7 +250,7 @@ ${var.repo_conf}
     merge({
       "configs" = {
         "secret" = {
-          "argocdServerAdminPassword" = var.store_passwords_in_ssm ? aws_ssm_parameter.encrypted[1].value : bcrypt(random_password.this.result, 10)
+          "argocdServerAdminPassword" = var.store_passwords_in_ssm ? aws_ssm_parameter.encrypted[0].value : bcrypt(random_password.this.result, 10)
         }
       }
     }, var.sensitive_conf)
@@ -258,7 +258,7 @@ ${var.repo_conf}
   conf = merge(
     var.enable_decryptor_plugin ? {
       "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
-      "repoServer.env[0].value"                                              = data.aws_region.current[1].name
+      "repoServer.env[0].value"                                              = data.aws_region.current[0].name
       "repoServer.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn" = module.iam_assumable_role_admin.iam_role_arn
       "repoServer.volumes[1].name"                                           = "decryptor"
       "repoServer.volumes[1].configMap.name"                                 = "argocd-decryptor"
@@ -334,7 +334,7 @@ EOF
         "value" = yamlencode(
           {
             "name"            = "Cognito"
-            "issuer"          = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${lookup(var.oidc, "pool", "")}"
+            "issuer"          = "https://cognito-idp.${data.aws_region.current[1].name}.amazonaws.com/${lookup(var.oidc, "pool", "")}"
             "clientID"        = lookup(var.oidc, "id", "")
             "clientSecret"    = "KMS_ENC:${aws_kms_ciphertext.client_secret[0].ciphertext_blob}:"
             "requestedScopes" = ["openid", "profile", "email"]
