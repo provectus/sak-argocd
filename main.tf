@@ -1,9 +1,9 @@
 data "aws_region" "current" {
-  count = var.enable_decryptor_plugin || var.store_passwords_in_ssm
+  count = var.enable_decryptor_plugin || var.store_passwords_in_ssm ? 1 : 0
 }
 
 data "aws_eks_cluster" "this" {
-  count = var.enable_decryptor_plugin || var.store_passwords_in_ssm
+  count = var.enable_decryptor_plugin || var.store_passwords_in_ssm ? 1 : 0
   name  = var.cluster_name
 }
 
@@ -139,7 +139,7 @@ resource "random_password" "this" {
 }
 
 resource "aws_ssm_parameter" "this" {
-  count       = var.store_passwords_in_ssm
+  count       = var.store_passwords_in_ssm ? 1 : 0
   name        = "/${var.cluster_name}/argocd/password"
   type        = "SecureString"
   value       = random_password.this.result
@@ -153,7 +153,7 @@ resource "aws_ssm_parameter" "this" {
 }
 
 resource "aws_ssm_parameter" "encrypted" {
-  count       = var.store_passwords_in_ssm
+  count       = var.store_passwords_in_ssm ? 1 : 0
   name        = "/${var.cluster_name}/argocd/password/encrypted"
   type        = "SecureString"
   value       = bcrypt(random_password.this.result, 10)
@@ -167,7 +167,7 @@ resource "aws_ssm_parameter" "encrypted" {
 }
 
 resource "aws_kms_key" "this" {
-  count       = var.enable_decryptor_plugin
+  count       = var.enable_decryptor_plugin ? 1 : 0
   description = "ArgoCD key"
   is_enabled  = true
 
