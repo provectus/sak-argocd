@@ -5,6 +5,7 @@ on:
     - '**.tf'
     - '**.tfvars'
     - '**.tfvars.json'
+    - '**.hcl'
 
 jobs:
 
