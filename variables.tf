@@ -16,6 +16,12 @@ variable "kubeversion" {
   default     = "1.18"
 }
 
+variable "unused_kubeversion" {
+  type        = string
+  description = "A Kubernetes API version"
+  default     = "1.18"
+}
+
 variable "chart_version" {
   type        = string
   description = "A Helm Chart version"
