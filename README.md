@@ -20,7 +20,13 @@ module argocd {
 
 ```
 terraform >= 0.15
+Kubernetes cluster version >= 1.22
  ```
+
+For using this module with clusters <1.22, use following code inside module declaration:
+```
+source     = "github.com/provectus/sak-argocd.git?ref=v0.1.1"
+```
 
 ## Providers
 
