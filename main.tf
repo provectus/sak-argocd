@@ -119,7 +119,7 @@ resource "aws_kms_ciphertext" "client_secret" {
 
 
 
-resource "helm_release" "argo-apps" {
+resource "helm_release" "argo_apps" {
   depends_on    = [helm_release.argocd]
   name          = "argocd-apps"
   repository    = local.repository
