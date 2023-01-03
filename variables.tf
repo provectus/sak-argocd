@@ -19,7 +19,7 @@ variable "kubeversion" {
 variable "chart_version" {
   type        = string
   description = "A Helm Chart version"
-  default     = "5.5.8"
+  default     = "5.16.13"
 }
 
 variable "tags" {

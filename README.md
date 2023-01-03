@@ -1,8 +1,6 @@
 # ArgoCD
 Module install ArgoCD application to Kubernetes cluster and optionally configure it to track changes of the repository. To read more about ArgoCD please follow to official [documentation](https://argoproj.github.io/argo-cd/).
-## Features
-- Self-managing
-- Encryption possibility with AWS KMS
+ArgoCD helm chart used with terraform helm_release provider as deployment option.
 
 ## Example
 Simple use-case without ingresses and authentication, for accessing ArgoCD UI need to configure port-forwarding.
