@@ -58,8 +58,8 @@ module "iam_assumable_role_admin" {
   version                       = "4.6.0"
   create_role                   = true
   role_name                     = "${var.cluster_name}_argocd"
-  provider_url                  = replace(data.aws_eks_cluster.this.identity.0.oidc.0.issuer, "https://", "")
-  role_policy_arns              = []
+  provider_url                  = replace(data.aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")
+  role_policy_arns              = [aws_iam_policy.this.arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:${local.namespace}:argocd-repo-server"]
   tags                          = var.tags
 }
