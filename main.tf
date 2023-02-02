@@ -45,7 +45,7 @@ resource "helm_release" "argocd" {
   }
 
   dynamic "set" {
-    for_each = merge(local.enabled ? local.conf : local.legacy_defaults, var.conf)
+    for_each = merge(merge(local.enabled ? local.conf : local.legacy_defaults, var.conf), local.admin_password)
     content {
       name  = set.key
       value = set.value
@@ -116,9 +116,6 @@ resource "aws_kms_ciphertext" "client_secret" {
 }
 
 
-
-
-
 resource "helm_release" "argo_apps" {
   depends_on    = [helm_release.argocd]
   name          = "argocd-apps"
@@ -144,7 +141,13 @@ resource "helm_release" "argo_apps" {
 
 locals {
   enabled   = var.branch != "" && var.owner != "" && var.repository != ""
-  namespace = coalescelist(kubernetes_namespace.this, [ { "metadata" = [{ "name" = var.namespace }] } ])[0].metadata[0].name
+  namespace = coalescelist(kubernetes_namespace.this, [
+    { "metadata" = [{ "name" = var.namespace }] }
+  ])[
+  0
+  ].metadata[
+  0
+  ].name
   # TODO: cleanup
   legacy_defaults = merge({
     "installCRDs"            = false
@@ -180,6 +183,10 @@ ${var.repo_conf}
   EOT
 
   secrets_conf = var.ssh_private_key == "" ? local.https_secrets_conf : local.ssh_secrets_conf
+
+  admin_password = {
+    "configs.secret.argocdServerAdminPassword" = aws_ssm_parameter.encrypted.value
+  }
 
   sensitive = yamlencode(
     merge({
@@ -254,14 +261,14 @@ ${var.repo_conf}
     "dex.enabled"                        = "false"
     "server.rbacConfig.policy\\.default" = "role:readonly"
 
-    "kubeVersionOverride"                     = var.kubeversion
-    "configs.secret.createSecret"             = true
-    "configs.secret.githubSecret"             = var.github_secret
-    "configs.secret.gitlabSecret"             = var.gitlab_secret
-    "configs.secret.bitbucketServerSecret"    = var.bitbucket_server_secret
-    "configs.secret.bitbucketUUID"            = var.bitbucket_uuid
-    "configs.secret.gogsSecret"               = var.gogs_secret
-    "configs.knownHosts.data.ssh_known_hosts" = var.known_hosts
+    "kubeVersionOverride"                      = var.kubeversion
+    "configs.secret.createSecret"              = true
+    "configs.secret.githubSecret"              = var.github_secret
+    "configs.secret.gitlabSecret"              = var.gitlab_secret
+    "configs.secret.bitbucketServerSecret"     = var.bitbucket_server_secret
+    "configs.secret.bitbucketUUID"             = var.bitbucket_uuid
+    "configs.secret.gogsSecret"                = var.gogs_secret
+    "configs.knownHosts.data.ssh_known_hosts"  = var.known_hosts
 
     "global.securityContext.fsGroup"                                       = "999"
     "repoServer.env[0].name"                                               = "AWS_DEFAULT_REGION"
@@ -282,6 +289,7 @@ ${var.repo_conf}
     "repoServer.initContainers[0].volumeMounts[0].name"                    = "custom-binaries"
     "server.config.kustomize\\.path\\.v3\\.2\\.0"                          = "/custom-binaries"
     "server.config.repositories"                                           = local.secrets_conf
+
 
     "server.service.type"    = "NodePort"
     "server.ingress.enabled" = length(var.domains) > 0 ? "true" : "false"
@@ -322,38 +330,38 @@ EOF
     ]),
     values({
     for i, domain in tolist(var.domains) :
-      "key" => {
-        "name"  = "server.ingress.tls[${i}].hosts[0]"
-        "value" = "argocd.${domain}"
-      }
+    "key" => {
+      "name"  = "server.ingress.tls[${i}].hosts[0]"
+      "value" = "argocd.${domain}"
+    }
     }),
     values({
     for i, domain in tolist(var.domains) :
-      "key" => {
-        "name"  = "server.ingress.hosts[${i}]"
-        "value" = "argocd.${domain}"
-      }
+    "key" => {
+      "name"  = "server.ingress.hosts[${i}]"
+      "value" = "argocd.${domain}"
+    }
     }),
     values({
     for i, domain in tolist(var.domains) :
-      "key" => {
-        "name"  = "server.ingress.tls[${i}].secretName"
-        "value" = "argocd-${domain}-tls"
-      }
+    "key" => {
+      "name"  = "server.ingress.tls[${i}].secretName"
+      "value" = "argocd-${domain}-tls"
+    }
     }),
     values({
     for key, value in var.ingress_annotations :
-      key => {
-        "name"  = "server.ingress.annotations.${replace(key, ".", "\\.")}"
-        "value" = value
-      }
+    key => {
+      "name"  = "server.ingress.annotations.${replace(key, ".", "\\.")}"
+      "value" = value
+    }
     }),
     values({
     for key, value in merge(local.conf, var.conf) :
-      key => {
-        "name"  = key
-        "value" = tostring(value)
-      }
+    key => {
+      "name"  = key
+      "value" = tostring(value)
+    }
     })
   )
 }
