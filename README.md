@@ -19,7 +19,7 @@ module argocd {
 ## Requirements
 
 ```
-terraform >= 0.15
+terraform >= 1.1
 Kubernetes cluster version >= 1.22
  ```
 
